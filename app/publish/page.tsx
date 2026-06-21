@@ -1,0 +1,197 @@
+"use client";
+
+import React, { useState } from 'react';
+import Logo from '@/components/Logo';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { Project } from '@/app/projects/page';
+
+export default function PublishPage() {
+  const router = useRouter();
+  const [title, setTitle] = useState('');
+  const [category, setCategory] = useState('Traditional Embroidery');
+  const [description, setDescription] = useState('');
+
+  const handlePublish = () => {
+    if (!title.trim() || !description.trim()) {
+      alert('Please fill in the project title and description.');
+      return;
+    }
+
+    const newProject: Project = {
+      id: `proj-${Date.now()}`,
+      title,
+      category,
+      location: "Algiers, DZ",
+      wilaya: "Algiers",
+      artisanName: "Local Artisan",
+      artisanAvatar: "https://lh3.googleusercontent.com/aida-public/AB6AXuB2_x3_d3fVvyfHmnTf9fgvjmwC81AdX3f4JADyna4UXNNDoa9V1sUEQHWINsexZUMDixO7iZAbFXpFardkBjutDk8WcuQeqPDdqD3Uezidv6ERUlKShh1oKH15AAha-fLMeYY3NgXAxrnq5X-yl99hkJ6GJixSKAT1CAoHK5xMpKZGaMuz1KzmY8-6WskzJIyvFPNcL3XBlPCA567Jv1HALykY7BJDjZV0e4Xoa_YjUFRexhnb88GErM9c2T4CaVfquy1zZb9TsTc",
+      artisanWilaya: "Algiers",
+      text: description,
+      image: "https://lh3.googleusercontent.com/aida-public/AB6AXuCnYNso6SqGYN9mbFQ3LMgtCorWbBUGboPNULEnpCBLVkFDFkO7BmmDWW58BVD6zW4YLDNWqsoDvDZR80mSFuvEleH2qC607ABF_pNEwpSwOa8W7Is_jOB6t3jkPaUabR-UuUsykXxC0cUWq62GVxwwUGpC6AdPHateWXuldMINlurJXr33u_Odj658W0C0Fh8OnU9wFMA-Qs_OOvvKbN7oXeWeU7cX8evBXVViYA8fTOQv-ph1rFo8Y2ZXA-hhX_spA8mklB2U2pg",
+      status: "New",
+      applicants: 0
+    };
+
+    let existingProjects: Project[] = [];
+    try {
+      const stored = localStorage.getItem('tirazy_projects');
+      if (stored) {
+        existingProjects = JSON.parse(stored);
+      }
+    } catch (e) {
+      console.error(e);
+    }
+
+    const updatedProjects = [newProject, ...existingProjects];
+    localStorage.setItem('tirazy_projects', JSON.stringify(updatedProjects));
+    
+    alert('Project published successfully!');
+    router.push('/projects');
+  };
+
+  return (
+    <div className="stitch-screen-wrapper">
+      
+<main className="pt-24 pb-20 px-4 md:px-margin-desktop max-w-container-max mx-auto">
+<div className="grid grid-cols-1 lg:grid-cols-12 gap-gutter">
+
+<div className="lg:col-span-7 space-y-6">
+<div className="bg-surface-container-lowest rounded-[24px] p-6 shadow-sm border border-outline-variant/20 group cursor-pointer transition-all hover:border-primary">
+<label className="block mb-4 font-label-md text-label-md text-primary uppercase tracking-widest">Showcase Imagery</label>
+<div className="relative aspect-[4/5] w-full rounded-[24px] border-2 border-dashed border-outline-variant flex flex-col items-center justify-center gap-4 bg-surface-container-low transition-colors group-hover:bg-primary/5 overflow-hidden">
+
+<div className="flex flex-col items-center text-center px-12">
+<span className="material-symbols-outlined text-primary text-5xl mb-4">add_photo_alternate</span>
+<h3 className="font-title-lg text-title-lg mb-2">Drop your masterpiece here</h3>
+<p className="text-on-surface-variant text-body-md">High-resolution photography (4:5 ratio) highlights the intricate textures of your textile work.</p>
+</div>
+<input aria-label="Upload project image" className="absolute inset-0 opacity-0 cursor-pointer" type="file"/>
+</div>
+<div className="mt-4 flex gap-2">
+<div className="w-20 h-20 rounded-lg border border-outline-variant bg-surface-container-low flex items-center justify-center">
+<span className="material-symbols-outlined text-outline">add</span>
+</div>
+<p className="text-label-md font-label-md text-on-surface-variant self-center ml-2">Add detail shots (up to 4)</p>
+</div>
+</div>
+<div className="bg-surface-container-lowest rounded-[24px] p-8 shadow-sm border border-outline-variant/20">
+<label className="block mb-4 font-label-md text-label-md text-primary uppercase tracking-widest">Story &amp; Craft</label>
+<textarea 
+  value={description}
+  onChange={(e) => setDescription(e.target.value)}
+  className="w-full bg-surface-container-low border-none rounded-xl p-4 text-body-lg focus:ring-2 focus:ring-primary min-h-[200px] placeholder:text-outline" 
+  placeholder="Describe the heritage, the technique, and the soul of this piece..."
+></textarea>
+</div>
+</div>
+
+<div className="lg:col-span-5 space-y-6">
+<div className="bg-surface-container-lowest rounded-[24px] p-8 shadow-sm border border-outline-variant/20 sticky top-24">
+<h2 className="font-headline-sm text-headline-sm mb-8 text-on-surface">Project Details</h2>
+<div className="space-y-6">
+
+<div>
+<label className="block font-label-md text-label-md mb-2 text-on-surface-variant">Project Title</label>
+<input 
+  value={title}
+  onChange={(e) => setTitle(e.target.value)}
+  className="w-full bg-surface-container-low border-none rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary text-body-md" 
+  placeholder="e.g. Karakou d'Alger 'Lumière d'Or'" 
+  type="text"
+/>
+</div>
+
+<div>
+<label className="block font-label-md text-label-md mb-2 text-on-surface-variant">Primary Category</label>
+<div className="relative">
+<select 
+  value={category}
+  onChange={(e) => setCategory(e.target.value)}
+  className="w-full appearance-none bg-surface-container-low border-none rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary text-body-md"
+>
+<option>Traditional Embroidery</option>
+<option>Haute Couture</option>
+<option>Textile Weaving</option>
+<option>Pattern Making</option>
+<option>Heritage Restoration</option>
+</select>
+<span className="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-on-surface-variant">expand_more</span>
+</div>
+</div>
+
+<div>
+<label className="block font-label-md text-label-md mb-3 text-on-surface-variant">Craft Expertise Tags</label>
+<div className="flex flex-wrap gap-2">
+<button className="px-4 py-1.5 rounded-full bg-primary/10 text-primary font-label-md text-label-md border border-primary/20 hover:bg-primary hover:text-white transition-all">Silk Weaving</button>
+<button className="px-4 py-1.5 rounded-full bg-primary/10 text-primary font-label-md text-label-md border border-primary/20 hover:bg-primary hover:text-white transition-all">Gold Thread</button>
+<button className="px-4 py-1.5 rounded-full bg-surface-container-high text-on-surface-variant font-label-md text-label-md border border-outline-variant hover:border-primary transition-all">Velvet Work</button>
+<button className="px-4 py-1.5 rounded-full bg-surface-container-high text-on-surface-variant font-label-md text-label-md border border-outline-variant hover:border-primary transition-all">+ Add Skill</button>
+</div>
+</div>
+
+<div className="flex items-center justify-between p-4 bg-surface-container-low rounded-xl">
+<div className="flex items-center gap-3">
+<span className="material-symbols-outlined text-primary">public</span>
+<div>
+<p className="font-label-md text-label-md">Professional Visibility</p>
+<p className="text-[12px] text-on-surface-variant">Visible to all Network Partners</p>
+</div>
+</div>
+<div className="relative inline-block w-12 h-6 rounded-full bg-primary transition-colors cursor-pointer">
+<div className="absolute right-1 top-1 w-4 h-4 rounded-full bg-white"></div>
+</div>
+</div>
+
+<div className="relative py-4 flex items-center justify-center">
+<div className="absolute inset-0 flex items-center">
+<div className="w-full border-t border-outline-variant/30"></div>
+</div>
+<div className="relative bg-surface-container-lowest px-4">
+<span className="material-symbols-outlined text-primary/30 text-sm">diamond</span>
+</div>
+</div>
+
+<div className="pt-4 space-y-3">
+<button 
+  onClick={handlePublish}
+  className="w-full py-4 bg-primary text-white rounded-full font-label-md text-label-md shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-2"
+>
+<span className="material-symbols-outlined" data-weight="fill">send</span>
+                                Publish Project
+                            </button>
+<button className="w-full py-4 border border-secondary text-secondary rounded-full font-label-md text-label-md hover:bg-secondary/5 transition-all">
+                                Save as Private Draft
+                            </button>
+</div>
+</div>
+</div>
+
+<div className="bg-secondary-container/20 p-6 rounded-[24px] border border-secondary-container/30">
+<div className="flex gap-4">
+<span className="material-symbols-outlined text-secondary">tips_and_updates</span>
+<div>
+<h4 className="font-label-md text-label-md text-on-secondary-container mb-1">Couture Tip</h4>
+<p className="text-[13px] text-on-secondary-container leading-relaxed">Artisans who include process shots and mention specific weaving techniques receive 40% more connection requests from luxury markets.</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+
+<footer className="mt-20 py-12 bg-surface-dim border-t border-outline-variant/10">
+<div className="max-w-container-max mx-auto px-margin-desktop flex flex-col md:flex-row justify-between items-center gap-6">
+<div className="text-on-surface-variant font-label-md text-label-md">
+                © 2024 TIRAZY. Artisan Network of Algeria.
+            </div>
+<div className="flex gap-8">
+<Link className="text-on-surface-variant hover:text-primary transition-colors text-label-md font-label-md" href="#">Privacy Standards</Link>
+<Link className="text-on-surface-variant hover:text-primary transition-colors text-label-md font-label-md" href="#">Terms of Craft</Link>
+<Link className="text-on-surface-variant hover:text-primary transition-colors text-label-md font-label-md" href="#">Support</Link>
+</div>
+</div>
+</footer>
+    </div>
+  );
+}

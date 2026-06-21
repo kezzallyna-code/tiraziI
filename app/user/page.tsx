@@ -1,0 +1,531 @@
+"use client";
+
+import React, { useState, useEffect } from 'react';
+import Link from 'next/link';
+import { UserPreviewSidebar } from '@/components/user-preview/UserPreviewSidebar';
+import { UserOverview } from '@/components/user-preview/UserOverview';
+
+interface Project {
+  id: string;
+  title: string;
+  category: string;
+  wilaya: string;
+  views: number;
+  appreciations: number;
+  image: string;
+}
+
+export default function UserPreviewPage() {
+  const [activeTab, setActiveTab] = useState<string>('overview');
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [showConfirmModal, setShowConfirmModal] = useState<string | null>(null);
+
+  // User Profile state initialized with fallback mock data
+  const [profile, setProfile] = useState({
+    fullName: 'Lina Benyahia',
+    roles: ['Fashion Designer', 'Modéliste'],
+    wilaya: 'Alger',
+    experience: 'Experienced',
+    bio: 'I create contemporary Algerian fashion inspired by traditional craftsmanship and modern silhouettes.',
+    avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=256',
+  });
+
+  // Selected subscription plan
+  const [selectedPlan, setSelectedPlan] = useState<string>('free');
+
+  // Load registration onboarding profile and plan if available in localStorage
+  useEffect(() => {
+    try {
+      const storedProfile = localStorage.getItem('tirazy_onboarding');
+      if (storedProfile) {
+        const parsed = JSON.parse(storedProfile);
+        setProfile({
+          fullName: parsed.fullName || 'Lina Benyahia',
+          roles: parsed.roles && parsed.roles.length > 0 ? parsed.roles : ['Fashion Designer', 'Modéliste'],
+          wilaya: parsed.wilaya || 'Alger',
+          experience: parsed.experience || 'Experienced',
+          bio: parsed.bio || 'I create contemporary Algerian fashion inspired by traditional craftsmanship and modern silhouettes.',
+          avatarUrl: parsed.avatarUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=256',
+        });
+      }
+
+      const storedPlan = localStorage.getItem('tirazy_selected_plan');
+      if (storedPlan) {
+        setSelectedPlan(storedPlan);
+      }
+    } catch (err) {
+      console.error('Error reading localStorage in user dashboard:', err);
+    }
+  }, []);
+
+  // Portfolio projects list state
+  const [projects, setProjects] = useState<Project[]>([
+    {
+      id: "up-1",
+      title: "Golden Karakou Collection",
+      category: "Haute Couture",
+      wilaya: "Alger",
+      views: 482,
+      appreciations: 56,
+      image: "https://lh3.googleusercontent.com/aida-public/AB6AXuCnYNso6SqGYN9mbFQ3LMgtCorWbBUGboPNULEnpCBLVkFDFkO7BmmDWW58BVD6zW4YLDNWqsoDvDZR80mSFuvEleH2qC607ABF_pNEwpSwOa8W7Is_jOB6t3jkPaUabR-UuUsykXxC0cUWq62GVxwwUGpC6AdPHateWXuldMINlurJXr33u_Odj658W0C0Fh8OnU9wFMA-Qs_OOvvKbN7oXeWeU7cX8evBXVViYA8fTOQv-ph1rFo8Y2ZXA-hhX_spA8mklB2U2pg"
+    },
+    {
+      id: "up-2",
+      title: "Modern Amazigh Vest",
+      category: "Linen & Leather",
+      wilaya: "Tizi Ouzou",
+      views: 290,
+      appreciations: 34,
+      image: "https://lh3.googleusercontent.com/aida-public/AB6AXuBp7xQgohR4980rX8ZHPmF0CkjykwjrSTtJ8zR_O8DXSZXHvylpDXHY0TuZR31EAtHhrvU_c30Kxwsky-jw0bAb5pm7f9EiNEoA1fV6GUTGy-gmxk51xTf-6omMXo-5kLSOqVU-w1LPFWFrKyCl6c_Zlqp5HdmCFi8g-wzPu29CN1mlOzs4tnkNbST2Ok-1nFB8jPoBRnJJT3uUbhaVKW2NUzNCy8bX2KWy9aBWosUilFGbJ5A86PTTYVTBgQATru0uOGTgTnpj3ks"
+    },
+    {
+      id: "up-3",
+      title: "Eco-Friendly Indigo Swatches",
+      category: "Natural Dyeing",
+      wilaya: "Tlemcen",
+      views: 184,
+      appreciations: 20,
+      image: "https://lh3.googleusercontent.com/aida-public/AB6AXuB-nEmYRpmYGNMlR7Xc_Um9FbujQDTHltZgJFnwrtSGESr9Fx99A3rFXLC2osb_HmCBsPdt34joYCgK0lT07smjPAvq65_0uJTnXWuTu_WflSTjFmLH9Ixm-DDrC9thJ_jtytQxIme-vI9ydmZfwnOqSVUIJrrtPNKhmzQbNg4BrIAZS0Y9vaBoQq5zNzWjpp-JKL_Dw0_DyiBZJC-Zg8lDxSYmDYf5p6m3izDqCBuxR6Ma4rVIisuoDoiqh0jQl3X8Q66R9p1x_jE"
+    }
+  ]);
+
+  const showToast = (message: string) => {
+    setToastMessage(message);
+    setTimeout(() => {
+      setToastMessage((curr) => (curr === message ? null : curr));
+    }, 3000);
+  };
+
+  const handleDeleteClick = (id: string) => {
+    setShowConfirmModal(id);
+  };
+
+  const confirmDeleteProject = () => {
+    if (showConfirmModal) {
+      setProjects((prev) => prev.filter((p) => p.id !== showConfirmModal));
+      setShowConfirmModal(null);
+      showToast('Project removed from your portfolio.');
+    }
+  };
+
+  const renderTabContent = () => {
+    switch (activeTab) {
+      case 'overview':
+        return (
+          <UserOverview
+            userData={profile}
+            selectedPlan={selectedPlan}
+            userProjects={projects}
+            onPublishProject={() => showToast('Project publishing will be available soon.')}
+            showToast={showToast}
+          />
+        );
+      
+      case 'profile':
+        return (
+          <div className="bg-white dark:bg-surface-container-low p-8 rounded-[24px] border border-outline-variant/10 shadow-sm space-y-8 animate-in fade-in duration-300">
+            <div>
+              <h3 className="font-title-lg text-title-lg text-primary font-serif">Profile Preview</h3>
+              <p className="text-[12px] text-on-surface-variant/80 mt-0.5">Manage and preview how others discover your profile.</p>
+            </div>
+
+            {/* Profile Card Layout */}
+            <div className="border border-outline-variant/20 rounded-2xl overflow-hidden bg-surface-container/20">
+              {/* Cover image placeholder */}
+              <div className="h-36 bg-gradient-to-r from-primary/30 to-secondary/30 relative">
+                <div className="absolute inset-0 textile-grid opacity-10"></div>
+              </div>
+              <div className="px-6 pb-6 relative flex flex-col sm:flex-row sm:items-end sm:justify-between gap-6 -mt-12">
+                <div className="flex flex-col sm:flex-row items-center sm:items-end gap-4 text-center sm:text-left">
+                  <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-white dark:border-surface shrink-0 bg-surface shadow-md">
+                    <img src={profile.avatarUrl} alt={profile.fullName} className="w-full h-full object-cover" />
+                  </div>
+                  <div className="space-y-1 pb-1">
+                    <div className="flex items-center gap-1.5 justify-center sm:justify-start">
+                      <h4 className="font-title-lg text-on-surface font-bold">{profile.fullName}</h4>
+                      {selectedPlan === 'pro' && (
+                        <span className="material-symbols-outlined text-secondary text-[20px]" data-weight="fill">
+                          verified
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-[13px] text-on-surface-variant font-medium">{profile.roles.join(' · ')}</p>
+                    <p className="text-[11px] text-on-surface-variant/70 flex items-center gap-0.5 justify-center sm:justify-start">
+                      <span className="material-symbols-outlined text-[13px]">location_on</span>
+                      {profile.wilaya} &middot; {profile.experience} level
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex gap-2 shrink-0">
+                  <Link
+                    href="/settings"
+                    className="px-5 py-2 bg-primary text-on-primary rounded-full font-label-md text-xs shadow-sm hover:shadow-md transition-all active:scale-95"
+                  >
+                    Edit Profile
+                  </Link>
+                  <button
+                    onClick={() => showToast('Public profile view will be available in production.')}
+                    className="px-5 py-2 border border-outline rounded-full text-on-surface hover:bg-surface-container-low transition-colors font-label-md text-xs cursor-pointer"
+                  >
+                    View Public Profile
+                  </button>
+                </div>
+              </div>
+
+              {/* Bio Section */}
+              <div className="px-6 pb-6 border-t border-outline-variant/10 pt-4 bg-surface-container-low/20">
+                <h5 className="font-label-sm text-[11px] uppercase tracking-wider text-on-surface-variant mb-1 font-bold">Biography</h5>
+                <p className="text-[13px] text-on-surface-variant leading-relaxed italic">
+                  "{profile.bio}"
+                </p>
+              </div>
+            </div>
+          </div>
+        );
+
+      case 'portfolio':
+        return (
+          <div className="bg-white dark:bg-surface-container-low p-8 rounded-[24px] border border-outline-variant/10 shadow-sm space-y-6 animate-in fade-in duration-300">
+            <div className="flex items-center justify-between border-b border-outline-variant/10 pb-4">
+              <div>
+                <h3 className="font-title-lg text-title-lg text-primary font-serif">My Portfolio</h3>
+                <p className="text-[12px] text-on-surface-variant/80 mt-0.5">Manage your showcased projects and creations.</p>
+              </div>
+              <Link
+                href="/publish"
+                className="px-5 py-2 bg-primary text-on-primary rounded-full font-label-md text-xs shadow-sm hover:shadow-md transition-all active:scale-95 flex items-center gap-1 cursor-pointer"
+              >
+                <span className="material-symbols-outlined text-[16px]">add</span>
+                Create Project
+              </Link>
+            </div>
+
+            {projects.length > 0 ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                {projects.map((proj) => (
+                  <div key={proj.id} className="bg-white dark:bg-surface-container-lowest rounded-[24px] border border-outline-variant/10 overflow-hidden shadow-sm flex flex-col group hover:-translate-y-1 transition-all duration-300">
+                    <div className="relative h-36 bg-surface-container-high overflow-hidden">
+                      <img src={proj.image} alt={proj.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                    </div>
+                    <div className="p-4 flex flex-col flex-grow">
+                      <span className="text-[9px] font-bold text-primary uppercase tracking-wider mb-1">{proj.category}</span>
+                      <h4 className="font-label-md text-on-surface font-bold line-clamp-1 leading-normal mb-1">{proj.title}</h4>
+                      <p className="text-[10px] text-on-surface-variant flex items-center gap-0.5 mb-4">
+                        <span className="material-symbols-outlined text-[12px]">location_on</span>
+                        {proj.wilaya}
+                      </p>
+
+                      <div className="flex items-center justify-between mt-auto pt-3 border-t border-outline-variant/5">
+                        <div className="flex gap-2 text-[10px] text-on-surface-variant/75">
+                          <span className="flex items-center gap-0.5"><span className="material-symbols-outlined text-[12px]">visibility</span>{proj.views}</span>
+                          <span className="flex items-center gap-0.5"><span className="material-symbols-outlined text-[12px]">thumb_up</span>{proj.appreciations}</span>
+                        </div>
+                        <div className="flex gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => showToast('Project editing will be available soon.')}
+                            className="p-1.5 border border-outline-variant rounded-full text-on-surface hover:bg-surface-container transition-colors cursor-pointer"
+                            title="Edit project"
+                          >
+                            <span className="material-symbols-outlined text-[14px]">edit</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteClick(proj.id)}
+                            className="p-1.5 border border-outline-variant rounded-full text-error hover:bg-error-container/20 transition-colors cursor-pointer"
+                            title="Delete project"
+                          >
+                            <span className="material-symbols-outlined text-[14px]">delete</span>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="py-16 text-center border-2 border-dashed border-outline-variant/30 rounded-2xl text-on-surface-variant/50 max-w-sm mx-auto space-y-4">
+                <span className="material-symbols-outlined text-[48px] text-outline/25">draw</span>
+                <div className="space-y-1">
+                  <p className="font-title-lg text-sm text-on-surface font-bold">Your portfolio is ready for its first creation.</p>
+                  <p className="text-[11px] text-on-surface-variant/80">Showcase your textile work and professional projects.</p>
+                </div>
+                <Link
+                  href="/projects"
+                  className="px-6 py-2 border border-primary text-primary hover:bg-primary/5 rounded-full font-label-md text-xs transition-all active:scale-95 inline-block"
+                >
+                  Explore Projects
+                </Link>
+              </div>
+            )}
+          </div>
+        );
+
+      case 'posts':
+        return (
+          <div className="bg-white dark:bg-surface-container-low p-8 rounded-[24px] border border-outline-variant/10 shadow-sm space-y-6 animate-in fade-in duration-300">
+            <div>
+              <h3 className="font-title-lg text-title-lg text-primary font-serif">My Posts</h3>
+              <p className="text-[12px] text-on-surface-variant/80 mt-0.5">Manage the text thought updates or questions you shared.</p>
+            </div>
+            
+            <div className="py-16 text-center border-2 border-dashed border-outline-variant/30 rounded-2xl text-on-surface-variant/50 max-w-sm mx-auto space-y-4">
+              <span className="material-symbols-outlined text-[48px] text-outline/25">feed</span>
+              <div className="space-y-1">
+                <p className="font-title-lg text-sm text-on-surface font-bold">You have not shared any posts yet.</p>
+                <p className="text-[11px] text-on-surface-variant/80">Share your first thought, textile tip, or atelier update.</p>
+              </div>
+              <Link
+                href="/explore"
+                className="px-6 py-2 bg-primary text-on-primary rounded-full font-label-md text-xs shadow-sm hover:bg-primary-dark transition-all active:scale-95 inline-block"
+              >
+                Create a Post
+              </Link>
+            </div>
+          </div>
+        );
+
+      case 'saved':
+        return (
+          <div className="bg-white dark:bg-surface-container-low p-8 rounded-[24px] border border-outline-variant/10 shadow-sm space-y-6 animate-in fade-in duration-300">
+            <div>
+              <h3 className="font-title-lg text-title-lg text-primary font-serif">Saved Inspirations</h3>
+              <p className="text-[12px] text-on-surface-variant/80 mt-0.5">Quickly revisit and filter saved posts and projects.</p>
+            </div>
+            
+            <div className="py-16 text-center border-2 border-dashed border-outline-variant/30 rounded-2xl text-on-surface-variant/50 max-w-sm mx-auto space-y-4">
+              <span className="material-symbols-outlined text-[48px] text-outline/25">bookmark</span>
+              <div className="space-y-1">
+                <p className="font-title-lg text-sm text-on-surface font-bold">No saved inspirations yet.</p>
+                <p className="text-[11px] text-on-surface-variant/80">Save posts from Explore to revisit them here.</p>
+              </div>
+              <Link
+                href="/explore"
+                className="px-6 py-2 border border-primary text-primary hover:bg-primary/5 rounded-full font-label-md text-xs transition-all active:scale-95 inline-block"
+              >
+                Explore Community
+              </Link>
+            </div>
+          </div>
+        );
+
+      case 'messages':
+        return (
+          <div className="bg-white dark:bg-surface-container-low p-8 rounded-[24px] border border-outline-variant/10 shadow-sm space-y-6 animate-in fade-in duration-300">
+            <div>
+              <h3 className="font-title-lg text-title-lg text-primary font-serif">Messages</h3>
+              <p className="text-[12px] text-on-surface-variant/80 mt-0.5">Private conversations with artisans and designers.</p>
+            </div>
+
+            <div className="divide-y divide-outline-variant/15 border border-outline-variant/15 rounded-2xl overflow-hidden bg-surface-container/10">
+              <div className="p-4 flex gap-4 items-center">
+                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center font-bold text-primary text-sm">NC</div>
+                <div className="flex-grow min-w-0">
+                  <div className="flex justify-between items-baseline mb-0.5">
+                    <span className="font-label-md text-xs text-on-surface font-bold truncate">Nadia Cherif</span>
+                    <span className="text-[10px] text-on-surface-variant/60">2 hours ago</span>
+                  </div>
+                  <p className="text-[11px] text-on-surface-variant truncate">I loved your Karakou pattern outlines. Are you available for contract work?</p>
+                </div>
+              </div>
+              <div className="p-4 flex gap-4 items-center">
+                <div className="w-10 h-10 rounded-full bg-secondary/10 flex items-center justify-center font-bold text-secondary text-sm">OM</div>
+                <div className="flex-grow min-w-0">
+                  <div className="flex justify-between items-baseline mb-0.5">
+                    <span className="font-label-md text-xs text-on-surface font-bold truncate">Omar Mansour</span>
+                    <span className="text-[10px] text-on-surface-variant/60">1 day ago</span>
+                  </div>
+                  <p className="text-[11px] text-on-surface-variant truncate">We are shipping the leather samples to Algiers tomorrow.</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="pt-2">
+              <Link
+                href="/messages"
+                className="px-6 py-2.5 bg-primary text-on-primary rounded-full font-label-md text-xs shadow-sm hover:bg-primary-dark transition-all active:scale-95 flex items-center gap-1.5 w-fit"
+              >
+                <span className="material-symbols-outlined text-[16px]">mail</span>
+                Open Messages
+              </Link>
+            </div>
+          </div>
+        );
+
+      case 'analytics':
+        return (
+          <div className="bg-white dark:bg-surface-container-low p-8 rounded-[24px] border border-outline-variant/10 shadow-sm space-y-8 animate-in fade-in duration-300">
+            <div>
+              <h3 className="font-title-lg text-title-lg text-primary font-serif">Profile Analytics</h3>
+              <p className="text-[12px] text-on-surface-variant/80 mt-0.5">Understand how people engage with your creations.</p>
+            </div>
+
+            {/* Quick Stats Grid */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+              <div className="p-4 bg-surface-container/30 rounded-xl border border-outline-variant/5">
+                <span className="text-on-surface-variant/70 block text-[10px] uppercase tracking-wider mb-1">Profile Views</span>
+                <span className="text-xl font-bold text-primary">1,248</span>
+              </div>
+              <div className="p-4 bg-surface-container/30 rounded-xl border border-outline-variant/5">
+                <span className="text-on-surface-variant/70 block text-[10px] uppercase tracking-wider mb-1">Unique Visitors</span>
+                <span className="text-xl font-bold text-primary">840</span>
+              </div>
+              <div className="p-4 bg-surface-container/30 rounded-xl border border-outline-variant/5">
+                <span className="text-on-surface-variant/70 block text-[10px] uppercase tracking-wider mb-1">Portfolio Views</span>
+                <span className="text-xl font-bold text-primary">482</span>
+              </div>
+              <div className="p-4 bg-surface-container/30 rounded-xl border border-outline-variant/5">
+                <span className="text-on-surface-variant/70 block text-[10px] uppercase tracking-wider mb-1">New Followers</span>
+                <span className="text-xl font-bold text-primary">12</span>
+              </div>
+            </div>
+
+            {/* Recent Profile Visitors */}
+            <div className="space-y-4 pt-2">
+              <h4 className="font-title-lg text-[15px] text-primary font-serif">Recent Profile Visitors</h4>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                {/* Visitor 1 */}
+                <div className="p-4 border border-outline-variant/20 rounded-2xl flex items-center gap-3 bg-surface-container/10">
+                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center font-bold text-primary shrink-0 text-xs">NC</div>
+                  <div className="min-w-0 space-y-0.5">
+                    <p className="font-label-md text-xs text-on-surface font-bold truncate">Nadia Cherif</p>
+                    <p className="text-[10px] text-on-surface-variant truncate">Master Weaver &middot; Oran</p>
+                    <p className="text-[9px] text-on-surface-variant/50">2 hours ago</p>
+                  </div>
+                </div>
+
+                {/* Visitor 2 */}
+                <div className="p-4 border border-outline-variant/20 rounded-2xl flex items-center gap-3 bg-surface-container/10">
+                  <div className="w-10 h-10 rounded-full bg-secondary/10 flex items-center justify-center font-bold text-secondary shrink-0 text-xs">OM</div>
+                  <div className="min-w-0 space-y-0.5">
+                    <p className="font-label-md text-xs text-on-surface font-bold truncate">Omar Mansour</p>
+                    <p className="text-[10px] text-on-surface-variant truncate">Leather Artisan &middot; Medea</p>
+                    <p className="text-[9px] text-on-surface-variant/50">1 day ago</p>
+                  </div>
+                </div>
+
+                {/* Visitor 3 */}
+                <div className="p-4 border border-outline-variant/20 rounded-2xl flex items-center gap-3 bg-surface-container/10">
+                  <div className="w-10 h-10 rounded-full bg-tertiary/10 flex items-center justify-center font-bold text-tertiary shrink-0 text-xs">YO</div>
+                  <div className="min-w-0 space-y-0.5">
+                    <p className="font-label-md text-xs text-on-surface font-bold truncate">Yasmine Oualid</p>
+                    <p className="text-[10px] text-on-surface-variant truncate">Styliste &middot; Alger</p>
+                    <p className="text-[9px] text-on-surface-variant/50">2 days ago</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="pt-2">
+              <Link
+                href="/analytics"
+                className="px-6 py-2.5 bg-primary text-on-primary rounded-full font-label-md text-xs shadow-sm hover:bg-primary-dark transition-all active:scale-95 flex items-center gap-1.5 w-fit"
+              >
+                <span className="material-symbols-outlined text-[16px]">insights</span>
+                View Full Analytics
+              </Link>
+            </div>
+          </div>
+        );
+
+      case 'settings':
+        return (
+          <div className="bg-white dark:bg-surface-container-low p-8 rounded-[24px] border border-outline-variant/10 shadow-sm space-y-6 animate-in fade-in duration-300">
+            <div>
+              <h3 className="font-title-lg text-title-lg text-primary font-serif">Account Settings</h3>
+              <p className="text-[12px] text-on-surface-variant/80 mt-0.5">Manage your profile details, privacy, notifications, and language preferences.</p>
+            </div>
+
+            <div className="pt-2">
+              <Link
+                href="/settings"
+                className="px-6 py-2.5 bg-primary text-on-primary rounded-full font-label-md text-xs shadow-sm hover:bg-primary-dark transition-all active:scale-95 flex items-center gap-1.5 w-fit"
+              >
+                <span className="material-symbols-outlined text-[16px]">settings</span>
+                Open Settings
+              </Link>
+            </div>
+          </div>
+        );
+
+      default:
+        return null;
+    }
+  };
+
+  return (
+    <div className="bg-background min-h-screen w-full pt-24 pb-16 px-margin-mobile md:px-margin-desktop">
+      
+      {/* Toast Notification */}
+      {toastMessage && (
+        <div className="fixed bottom-6 right-6 z-50 bg-inverse-surface text-inverse-on-surface px-6 py-3 rounded-xl shadow-2xl flex items-center gap-2 font-label-md animate-in fade-in slide-in-from-bottom-4 duration-300">
+          <span className="material-symbols-outlined text-[20px] text-primary">info</span>
+          {toastMessage}
+        </div>
+      )}
+
+      {/* Custom Confirmation Modal for deletion */}
+      {showConfirmModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
+          <div className="bg-white dark:bg-surface-container p-6 rounded-[28px] max-w-sm w-full space-y-6 shadow-2xl animate-in zoom-in-95 duration-200 border border-outline-variant/30 text-left">
+            <div className="space-y-2">
+              <h3 className="font-headline-sm text-lg text-primary font-serif">Remove Project?</h3>
+              <p className="text-[13px] text-on-surface-variant leading-relaxed">
+                Are you sure you want to remove this project from your portfolio? This action cannot be undone.
+              </p>
+            </div>
+            <div className="flex gap-3 justify-end">
+              <button
+                type="button"
+                onClick={() => setShowConfirmModal(null)}
+                className="px-5 py-2.5 border border-outline rounded-full text-on-surface font-label-md text-xs hover:bg-surface-container transition-colors cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={confirmDeleteProject}
+                className="px-5 py-2.5 bg-error text-on-error rounded-full font-label-md text-xs shadow-md hover:bg-error-container hover:text-on-error-container transition-colors cursor-pointer"
+              >
+                Remove
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div className="max-w-container-max mx-auto space-y-8">
+        
+        {/* User Preview Banner Header */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-6 bg-white dark:bg-surface-container-low rounded-[24px] border border-outline-variant/30 shadow-sm">
+          <div className="flex items-center gap-3">
+            <span className="w-2.5 h-2.5 rounded-full bg-primary animate-pulse"></span>
+            <span className="font-label-lg text-primary font-bold uppercase tracking-wider text-sm">
+              User Dashboard Workspace
+            </span>
+          </div>
+          <span className="text-[12px] text-on-surface-variant/70 italic">
+            This dashboard demonstrates layout views for registered users.
+          </span>
+        </div>
+
+        {/* Workspace Layout */}
+        <div className="grid grid-cols-1 md:grid-cols-[280px_1fr] gap-8">
+          
+          {/* Sidebar */}
+          <div className="w-full">
+            <UserPreviewSidebar activeTab={activeTab} setActiveTab={setActiveTab} />
+          </div>
+
+          {/* Main content pane */}
+          <main className="min-w-0">
+            {renderTabContent()}
+          </main>
+
+        </div>
+
+      </div>
+    </div>
+  );
+}

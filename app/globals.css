@@ -1,0 +1,144 @@
+@import "tailwindcss";
+
+@theme {
+  /* Colors */
+  --color-primary: #4B9991;
+  --color-primary-dark: #076760;
+  --color-on-primary: #FFFFFF;
+  --color-primary-container: #CCE8E4;
+  --color-on-primary-container: #05201E;
+
+  --color-secondary: #DD8F26;
+  --color-secondary-dark: #875200;
+  --color-on-secondary: #FFFFFF;
+  --color-secondary-container: #FCEFD8;
+  --color-on-secondary-container: #2A1A00;
+  --color-secondary-fixed: #FCEFD8;
+  --color-on-secondary-fixed: #2A1A00;
+
+  --color-tertiary: #5C5C95;
+  --color-on-tertiary: #FFFFFF;
+  --color-tertiary-container: #E2E1FB;
+  --color-on-tertiary-container: #19184B;
+
+  --color-error: #BA1A1A;
+  --color-on-error: #FFFFFF;
+  --color-error-container: #FFDAD6;
+  --color-on-error-container: #410002;
+
+  --color-background: #F9F1E8;
+  --color-surface: #FFFFFF;
+  --color-on-surface: #1E1B18;
+  --color-surface-variant: #E8DED3;
+  --color-on-surface-variant: #494541;
+
+  --color-surface-container-lowest: #FFFFFF;
+  --color-surface-container-low: #F6F0E9;
+  --color-surface-container: #F0EAE3;
+  --color-surface-container-high: #EAE4DD;
+  --color-surface-container-highest: #E4DFD8;
+  --color-surface-dim: #DCD7D1;
+
+  --color-outline: #7A7672;
+  --color-outline-variant: #CBC5C0;
+
+  --color-inverse-surface: #33302D;
+  --color-inverse-on-surface: #F6F0E9;
+  --color-inverse-primary: #8BD3CA;
+
+  --color-accent: #B7452E;
+  --color-text-primary: #1E1B18;
+  --color-text-secondary: #3F4947;
+  --color-border: #E8DED3;
+  --color-border-hover: #BEC9C6;
+
+  /* Spacing */
+  --spacing-container-max: 1280px;
+  --spacing-margin-desktop: 4rem;
+  --spacing-margin-mobile: 1.5rem;
+  --spacing-gutter: 1.5rem;
+
+  /* Fonts */
+  --font-display: var(--font-playfair);
+  --font-sans: var(--font-hanken);
+
+  /* Border Radius */
+  --radius-sm: 0.25rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1.5rem;
+  --radius-2xl: 24px; /* Used for portfolio cards */
+  --radius-full: 9999px;
+}
+
+:root {
+  --background: #F9F1E8;
+  --foreground: #1E1B18;
+}
+
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans), sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+.stitch-screen-wrapper {
+  width: 100%;
+}
+
+
+/* Base utility classes for typography based on design system */
+@layer utilities {
+  .text-display-lg {
+    font-family: var(--font-display);
+    font-size: 48px;
+    font-weight: 700;
+    line-height: 56px;
+    letter-spacing: -0.02em;
+  }
+  .text-display-lg-mobile {
+    font-family: var(--font-display);
+    font-size: 32px;
+    font-weight: 700;
+    line-height: 40px;
+  }
+  .text-headline-md {
+    font-family: var(--font-display);
+    font-size: 32px;
+    font-weight: 600;
+    line-height: 40px;
+  }
+  .text-headline-sm {
+    font-family: var(--font-display);
+    font-size: 24px;
+    font-weight: 600;
+    line-height: 32px;
+  }
+  .text-title-lg {
+    font-family: var(--font-sans);
+    font-size: 20px;
+    font-weight: 600;
+    line-height: 28px;
+  }
+  .text-body-lg {
+    font-family: var(--font-sans);
+    font-size: 18px;
+    font-weight: 400;
+    line-height: 28px;
+  }
+  .text-body-md {
+    font-family: var(--font-sans);
+    font-size: 16px;
+    font-weight: 400;
+    line-height: 24px;
+  }
+  .text-label-md {
+    font-family: var(--font-sans);
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 20px;
+    letter-spacing: 0.05em;
+  }
+}
+
