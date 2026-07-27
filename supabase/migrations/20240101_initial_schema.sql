@@ -267,18 +267,18 @@ create table if not exists conversations (
     created_at timestamp with time zone default timezone('utc'::text, now())
 );
 
-alter table conversations enable row level security;
-create policy "Users can view their own conversations." on conversations for select using (
-    auth.uid() in (select profile_id from conversation_members where conversation_id = conversations.id)
-);
-create policy "Users can create conversations." on conversations for insert with check (true);
-
 -- 17. Conversation Members
 create table if not exists conversation_members (
     conversation_id uuid references conversations(id) on delete cascade,
     profile_id uuid references profiles(id) on delete cascade,
     primary key (conversation_id, profile_id)
 );
+
+alter table conversations enable row level security;
+create policy "Users can view their own conversations." on conversations for select using (
+    auth.uid() in (select profile_id from conversation_members where conversation_id = conversations.id)
+);
+create policy "Users can create conversations." on conversations for insert with check (true);
 
 -- Trigger/Function to enforce max 2 members for MVP
 create or replace function enforce_max_conversation_members()
