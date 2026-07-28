@@ -42,3 +42,6 @@ next-env.d.ts
 
 # Large files
 stitch_screens.zip
+
+.vercel
+.env*
