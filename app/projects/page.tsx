@@ -24,6 +24,8 @@ export default function ProjectsPage() {
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
   const [wilayaSearch, setWilayaSearch] = useState<string>('');
   const [projectsList, setProjectsList] = useState<Project[]>([]);
+  const [savedProjectIds, setSavedProjectIds] = useState<Set<string>>(new Set());
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
   const categories = ['All', 'Embroidery', 'Pattern Making', 'Silk Weaving', 'Sustainable Dyeing', 'Leather Work', 'Haute Couture', 'Traditional Karakou'];
 
@@ -151,9 +153,58 @@ export default function ProjectsPage() {
       } else {
         setProjectsList(initialProjects);
       }
+
+      // Fetch current user and their saved projects
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        setCurrentUserId(session.user.id);
+        const { data: savedData } = await supabase
+          .from('saved_projects')
+          .select('project_id')
+          .eq('profile_id', session.user.id);
+        
+        if (savedData) {
+          setSavedProjectIds(new Set(savedData.map((s: any) => s.project_id)));
+        }
+      }
     };
     fetchProjects();
   }, []);
+
+  const handleSaveProject = async (projectId: string) => {
+    if (!currentUserId) {
+      alert('Please log in to save projects.');
+      return;
+    }
+
+    const supabase = createClient();
+    const isSaved = savedProjectIds.has(projectId);
+    
+    // Optimistic UI update
+    setSavedProjectIds(prev => {
+      const newSet = new Set(prev);
+      if (isSaved) newSet.delete(projectId);
+      else newSet.add(projectId);
+      return newSet;
+    });
+
+    try {
+      if (isSaved) {
+        await supabase.from('saved_projects').delete().match({ project_id: projectId, profile_id: currentUserId });
+      } else {
+        await supabase.from('saved_projects').insert({ project_id: projectId, profile_id: currentUserId });
+      }
+    } catch (error) {
+      console.error('Error toggling save:', error);
+      // Revert on error
+      setSavedProjectIds(prev => {
+        const newSet = new Set(prev);
+        if (isSaved) newSet.add(projectId);
+        else newSet.delete(projectId);
+        return newSet;
+      });
+    }
+  };
 
   // Combined Category + Wilaya filter
   const filteredProjects = projectsList.filter((project) => {
@@ -306,8 +357,18 @@ export default function ProjectsPage() {
                     </div>
                     
                     <div className="flex gap-2">
-                      <button className="p-2 border border-outline-variant rounded-full text-on-surface-variant hover:bg-surface-container transition-colors">
-                        <span className="material-symbols-outlined">bookmark</span>
+                      <button 
+                        onClick={() => handleSaveProject(project.id)}
+                        className={`p-2 border rounded-full transition-colors ${
+                          savedProjectIds.has(project.id) 
+                            ? 'bg-primary border-primary text-white' 
+                            : 'border-outline-variant text-on-surface-variant hover:bg-surface-container'
+                        }`}
+                        title={savedProjectIds.has(project.id) ? "Unsave Project" : "Save Project"}
+                      >
+                        <span className="material-symbols-outlined" data-weight={savedProjectIds.has(project.id) ? "fill" : "regular"}>
+                          bookmark
+                        </span>
                       </button>
                       <Link href="/messages" className="px-6 py-2 bg-primary text-on-primary rounded-full font-label-md active:scale-95 transition-transform inline-flex items-center justify-center">
                         Apply

@@ -20,14 +20,14 @@ export default function UserPreviewPage() {
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [showConfirmModal, setShowConfirmModal] = useState<string | null>(null);
 
-  // User Profile state initialized with fallback mock data
+  // User Profile state initialized empty
   const [profile, setProfile] = useState({
-    fullName: 'Lina Benyahia',
-    roles: ['Fashion Designer', 'Modéliste'],
-    wilaya: 'Alger',
-    experience: 'Experienced',
-    bio: 'I create contemporary Algerian fashion inspired by traditional craftsmanship and modern silhouettes.',
-    avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=256',
+    fullName: '',
+    roles: [],
+    wilaya: '',
+    experience: '',
+    bio: '',
+    avatarUrl: '/images/default-avatar.png',
   });
 
   // Selected subscription plan

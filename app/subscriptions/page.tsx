@@ -27,7 +27,7 @@ export default function SubscriptionsPage() {
   };
 
   const handleSelectPlan = (planId: string, planName: string) => {
-    router.push(`/register?plan=${planId}`);
+    router.push(`/checkout?plan=${planId}`);
   };
 
   return (
