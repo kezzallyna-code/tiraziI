@@ -6,7 +6,7 @@ import { cookies } from 'next/headers';
 // Require environment variable
 const stripeKey = process.env.STRIPE_SECRET_KEY || 'dummy_test_key_that_fails_gracefully';
 const stripe = new Stripe(stripeKey, {
-  apiVersion: '2025-01-27.acacia',
+  apiVersion: '2026-07-29.dahlia' as any,
 });
 
 export async function POST(request: Request) {
