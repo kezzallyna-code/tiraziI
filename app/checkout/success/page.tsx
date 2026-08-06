@@ -6,7 +6,7 @@ import Logo from '@/components/Logo';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { createClient } from '@/utils/supabase/client';
 
-export default function CheckoutSuccessPage() {
+function CheckoutSuccessContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const plan = searchParams.get('plan');
@@ -75,5 +75,13 @@ export default function CheckoutSuccessPage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function CheckoutSuccessPage() {
+  return (
+    <React.Suspense fallback={<div>Loading checkout success...</div>}>
+      <CheckoutSuccessContent />
+    </React.Suspense>
   );
 }

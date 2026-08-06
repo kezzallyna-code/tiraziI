@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { UserPreviewSidebar } from '@/components/user-preview/UserPreviewSidebar';
 import { UserOverview } from '@/components/user-preview/UserOverview';
+import { createClient } from '@/utils/supabase/client';
 
 interface Project {
   id: string;
@@ -21,7 +22,14 @@ export default function UserPreviewPage() {
   const [showConfirmModal, setShowConfirmModal] = useState<string | null>(null);
 
   // User Profile state initialized empty
-  const [profile, setProfile] = useState({
+  const [profile, setProfile] = useState<{
+    fullName: string;
+    roles: string[];
+    wilaya: string;
+    experience: string;
+    bio: string;
+    avatarUrl: string;
+  }>({
     fullName: '',
     roles: [],
     wilaya: '',
@@ -29,6 +37,8 @@ export default function UserPreviewPage() {
     bio: '',
     avatarUrl: '/images/default-avatar.png',
   });
+
+  const [projects, setProjects] = useState<Project[]>([]);
 
   // Selected subscription plan
   const [selectedPlan, setSelectedPlan] = useState<string>('free');
