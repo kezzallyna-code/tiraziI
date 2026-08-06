@@ -35,59 +35,70 @@ export default function UserPreviewPage() {
 
   // Load registration onboarding profile and plan if available in localStorage
   useEffect(() => {
-    try {
-      const storedProfile = localStorage.getItem('tirazy_onboarding');
-      if (storedProfile) {
-        const parsed = JSON.parse(storedProfile);
-        setProfile({
-          fullName: parsed.fullName || 'Lina Benyahia',
-          roles: parsed.roles && parsed.roles.length > 0 ? parsed.roles : ['Fashion Designer', 'Modéliste'],
-          wilaya: parsed.wilaya || 'Alger',
-          experience: parsed.experience || 'Experienced',
-          bio: parsed.bio || 'I create contemporary Algerian fashion inspired by traditional craftsmanship and modern silhouettes.',
-          avatarUrl: parsed.avatarUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=256',
-        });
-      }
+    const fetchData = async () => {
+      const supabase = createClient();
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (session?.user) {
+        // Fetch Profile
+        const { data: profileData } = await supabase
+          .from('profiles')
+          .select(`
+            full_name,
+            bio,
+            wilaya,
+            experience_level,
+            subscription_plan,
+            avatar_url,
+            profile_roles (
+              roles ( name )
+            )
+          `)
+          .eq('id', session.user.id)
+          .single();
 
-      const storedPlan = localStorage.getItem('tirazy_selected_plan');
-      if (storedPlan) {
-        setSelectedPlan(storedPlan);
+        if (profileData) {
+          setProfile({
+            fullName: profileData.full_name || 'Artisan',
+            roles: profileData.profile_roles?.map((pr: any) => pr.roles?.name) || ['Textile Professional'],
+            wilaya: profileData.wilaya || 'Alger',
+            experience: profileData.experience_level || 'Experienced',
+            bio: profileData.bio || 'Passionate about textile arts.',
+            avatarUrl: profileData.avatar_url || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=256',
+          });
+          setSelectedPlan(profileData.subscription_plan || 'free');
+        }
+
+        // Fetch Projects
+        const { data: projectsData } = await supabase
+          .from('projects')
+          .select(`
+            id,
+            title,
+            category_id,
+            wilaya,
+            project_media ( media_url )
+          `)
+          .eq('author_id', session.user.id)
+          .order('created_at', { ascending: false });
+
+        if (projectsData) {
+          const formattedProjects = projectsData.map((p: any) => ({
+            id: p.id,
+            title: p.title,
+            category: 'Project', // we could join categories, keeping simple for now
+            wilaya: p.wilaya || 'Alger',
+            views: 0,
+            appreciations: 0,
+            image: p.project_media?.[0]?.media_url || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=256'
+          }));
+          setProjects(formattedProjects);
+        }
       }
-    } catch (err) {
-      console.error('Error reading localStorage in user dashboard:', err);
-    }
+    };
+    
+    fetchData();
   }, []);
-
-  // Portfolio projects list state
-  const [projects, setProjects] = useState<Project[]>([
-    {
-      id: "up-1",
-      title: "Golden Karakou Collection",
-      category: "Haute Couture",
-      wilaya: "Alger",
-      views: 482,
-      appreciations: 56,
-      image: "https://lh3.googleusercontent.com/aida-public/AB6AXuCnYNso6SqGYN9mbFQ3LMgtCorWbBUGboPNULEnpCBLVkFDFkO7BmmDWW58BVD6zW4YLDNWqsoDvDZR80mSFuvEleH2qC607ABF_pNEwpSwOa8W7Is_jOB6t3jkPaUabR-UuUsykXxC0cUWq62GVxwwUGpC6AdPHateWXuldMINlurJXr33u_Odj658W0C0Fh8OnU9wFMA-Qs_OOvvKbN7oXeWeU7cX8evBXVViYA8fTOQv-ph1rFo8Y2ZXA-hhX_spA8mklB2U2pg"
-    },
-    {
-      id: "up-2",
-      title: "Modern Amazigh Vest",
-      category: "Linen & Leather",
-      wilaya: "Tizi Ouzou",
-      views: 290,
-      appreciations: 34,
-      image: "https://lh3.googleusercontent.com/aida-public/AB6AXuBp7xQgohR4980rX8ZHPmF0CkjykwjrSTtJ8zR_O8DXSZXHvylpDXHY0TuZR31EAtHhrvU_c30Kxwsky-jw0bAb5pm7f9EiNEoA1fV6GUTGy-gmxk51xTf-6omMXo-5kLSOqVU-w1LPFWFrKyCl6c_Zlqp5HdmCFi8g-wzPu29CN1mlOzs4tnkNbST2Ok-1nFB8jPoBRnJJT3uUbhaVKW2NUzNCy8bX2KWy9aBWosUilFGbJ5A86PTTYVTBgQATru0uOGTgTnpj3ks"
-    },
-    {
-      id: "up-3",
-      title: "Eco-Friendly Indigo Swatches",
-      category: "Natural Dyeing",
-      wilaya: "Tlemcen",
-      views: 184,
-      appreciations: 20,
-      image: "https://lh3.googleusercontent.com/aida-public/AB6AXuB-nEmYRpmYGNMlR7Xc_Um9FbujQDTHltZgJFnwrtSGESr9Fx99A3rFXLC2osb_HmCBsPdt34joYCgK0lT07smjPAvq65_0uJTnXWuTu_WflSTjFmLH9Ixm-DDrC9thJ_jtytQxIme-vI9ydmZfwnOqSVUIJrrtPNKhmzQbNg4BrIAZS0Y9vaBoQq5zNzWjpp-JKL_Dw0_DyiBZJC-Zg8lDxSYmDYf5p6m3izDqCBuxR6Ma4rVIisuoDoiqh0jQl3X8Q66R9p1x_jE"
-    }
-  ]);
 
   const showToast = (message: string) => {
     setToastMessage(message);

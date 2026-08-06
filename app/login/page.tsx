@@ -150,7 +150,20 @@ export default function LoginPage() {
                     </label>
                     <button
                       type="button"
-                      onClick={() => triggerToast('Password reset link sent (preview only).')}
+                      onClick={async () => {
+                        if (!email.trim()) {
+                          setError('Please enter your email address first.');
+                          return;
+                        }
+                        const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+                          redirectTo: `${window.location.origin}/update-password`,
+                        });
+                        if (error) {
+                          setError(error.message);
+                        } else {
+                          triggerToast('Password reset link sent to your email.');
+                        }
+                      }}
                       className="font-label-md text-[13px] text-primary hover:underline bg-transparent border-0 cursor-pointer"
                     >
                       Forgot password?

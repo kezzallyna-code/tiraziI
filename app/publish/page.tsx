@@ -4,50 +4,105 @@ import React, { useState } from 'react';
 import Logo from '@/components/Logo';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Project } from '@/app/projects/page';
+import { Project } from '@/app/projects/page';import { createClient } from '@/utils/supabase/client';
 
 export default function PublishPage() {
   const router = useRouter();
   const [title, setTitle] = useState('');
-  const [category, setCategory] = useState('Traditional Embroidery');
+  const [category, setCategory] = useState('');
+  const [categories, setCategories] = useState<{id: string, name: string}[]>([]);
   const [description, setDescription] = useState('');
+  const [file, setFile] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [isPublishing, setIsPublishing] = useState(false);
 
-  const handlePublish = () => {
+  React.useEffect(() => {
+    const fetchCategories = async () => {
+      const supabase = createClient();
+      const { data } = await supabase.from('categories').select('id, name');
+      if (data && data.length > 0) {
+        setCategories(data);
+        setCategory(data[0].id);
+      }
+    };
+    fetchCategories();
+  }, []);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      const selectedFile = e.target.files[0];
+      setFile(selectedFile);
+      setPreviewUrl(URL.createObjectURL(selectedFile));
+    }
+  };
+
+  const handlePublish = async () => {
     if (!title.trim() || !description.trim()) {
       alert('Please fill in the project title and description.');
       return;
     }
 
-    const newProject: Project = {
-      id: `proj-${Date.now()}`,
-      title,
-      category,
-      location: "Algiers, DZ",
-      wilaya: "Algiers",
-      artisanName: "Local Artisan",
-      artisanAvatar: "https://lh3.googleusercontent.com/aida-public/AB6AXuB2_x3_d3fVvyfHmnTf9fgvjmwC81AdX3f4JADyna4UXNNDoa9V1sUEQHWINsexZUMDixO7iZAbFXpFardkBjutDk8WcuQeqPDdqD3Uezidv6ERUlKShh1oKH15AAha-fLMeYY3NgXAxrnq5X-yl99hkJ6GJixSKAT1CAoHK5xMpKZGaMuz1KzmY8-6WskzJIyvFPNcL3XBlPCA567Jv1HALykY7BJDjZV0e4Xoa_YjUFRexhnb88GErM9c2T4CaVfquy1zZb9TsTc",
-      artisanWilaya: "Algiers",
-      text: description,
-      image: "https://lh3.googleusercontent.com/aida-public/AB6AXuCnYNso6SqGYN9mbFQ3LMgtCorWbBUGboPNULEnpCBLVkFDFkO7BmmDWW58BVD6zW4YLDNWqsoDvDZR80mSFuvEleH2qC607ABF_pNEwpSwOa8W7Is_jOB6t3jkPaUabR-UuUsykXxC0cUWq62GVxwwUGpC6AdPHateWXuldMINlurJXr33u_Odj658W0C0Fh8OnU9wFMA-Qs_OOvvKbN7oXeWeU7cX8evBXVViYA8fTOQv-ph1rFo8Y2ZXA-hhX_spA8mklB2U2pg",
-      status: "New",
-      applicants: 0
-    };
-
-    let existingProjects: Project[] = [];
-    try {
-      const stored = localStorage.getItem('tirazy_projects');
-      if (stored) {
-        existingProjects = JSON.parse(stored);
-      }
-    } catch (e) {
-      console.error(e);
-    }
-
-    const updatedProjects = [newProject, ...existingProjects];
-    localStorage.setItem('tirazy_projects', JSON.stringify(updatedProjects));
+    setIsPublishing(true);
+    const supabase = createClient();
     
-    alert('Project published successfully!');
-    router.push('/projects');
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        alert('You must be logged in to publish a project.');
+        router.push('/login');
+        return;
+      }
+
+      // Insert Project
+      const { data: projectData, error: projectError } = await supabase
+        .from('projects')
+        .insert({
+          author_id: session.user.id,
+          title,
+          description,
+          category_id: category || null,
+          wilaya: 'Alger', // default wilaya
+          status: 'approved'
+        })
+        .select()
+        .single();
+
+      if (projectError) throw projectError;
+
+      // Upload Image if selected
+      if (file && projectData) {
+        const fileExt = file.name.split('.').pop();
+        // RLS policy for project-media requires foldername to be auth.uid()
+        const fileName = `${session.user.id}/${projectData.id}-${Math.random()}.${fileExt}`;
+        
+        const { error: uploadError } = await supabase.storage
+          .from('project-media')
+          .upload(fileName, file);
+
+        if (uploadError) throw uploadError;
+
+        const { data: publicUrlData } = supabase.storage
+          .from('project-media')
+          .getPublicUrl(fileName);
+
+        if (publicUrlData.publicUrl) {
+          await supabase.from('project_media').insert({
+            project_id: projectData.id,
+            media_url: publicUrlData.publicUrl,
+            media_type: 'image',
+            sort_order: 0
+          });
+        }
+      }
+
+      alert('Project published successfully!');
+      router.push('/projects');
+    } catch (error: any) {
+      console.error('Error publishing project:', error);
+      alert('Failed to publish project: ' + error.message);
+    } finally {
+      setIsPublishing(false);
+    }
   };
 
   return (
@@ -61,12 +116,22 @@ export default function PublishPage() {
 <label className="block mb-4 font-label-md text-label-md text-primary uppercase tracking-widest">Showcase Imagery</label>
 <div className="relative aspect-[4/5] w-full rounded-[24px] border-2 border-dashed border-outline-variant flex flex-col items-center justify-center gap-4 bg-surface-container-low transition-colors group-hover:bg-primary/5 overflow-hidden">
 
-<div className="flex flex-col items-center text-center px-12">
-<span className="material-symbols-outlined text-primary text-5xl mb-4">add_photo_alternate</span>
-<h3 className="font-title-lg text-title-lg mb-2">Drop your masterpiece here</h3>
-<p className="text-on-surface-variant text-body-md">High-resolution photography (4:5 ratio) highlights the intricate textures of your textile work.</p>
-</div>
-<input aria-label="Upload project image" className="absolute inset-0 opacity-0 cursor-pointer" type="file"/>
+{previewUrl ? (
+  <img src={previewUrl} alt="Preview" className="absolute inset-0 w-full h-full object-cover" />
+) : (
+  <div className="flex flex-col items-center text-center px-12">
+    <span className="material-symbols-outlined text-primary text-5xl mb-4">add_photo_alternate</span>
+    <h3 className="font-title-lg text-title-lg mb-2">Drop your masterpiece here</h3>
+    <p className="text-on-surface-variant text-body-md">High-resolution photography (4:5 ratio) highlights the intricate textures of your textile work.</p>
+  </div>
+)}
+<input 
+  onChange={handleFileChange}
+  accept="image/*"
+  aria-label="Upload project image" 
+  className="absolute inset-0 opacity-0 cursor-pointer" 
+  type="file"
+/>
 </div>
 <div className="mt-4 flex gap-2">
 <div className="w-20 h-20 rounded-lg border border-outline-variant bg-surface-container-low flex items-center justify-center">
@@ -110,11 +175,9 @@ export default function PublishPage() {
   onChange={(e) => setCategory(e.target.value)}
   className="w-full appearance-none bg-surface-container-low border-none rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary text-body-md"
 >
-<option>Traditional Embroidery</option>
-<option>Haute Couture</option>
-<option>Textile Weaving</option>
-<option>Pattern Making</option>
-<option>Heritage Restoration</option>
+  {categories.map((cat) => (
+    <option key={cat.id} value={cat.id}>{cat.name}</option>
+  ))}
 </select>
 <span className="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-on-surface-variant">expand_more</span>
 </div>
@@ -155,10 +218,13 @@ export default function PublishPage() {
 <div className="pt-4 space-y-3">
 <button 
   onClick={handlePublish}
-  className="w-full py-4 bg-primary text-white rounded-full font-label-md text-label-md shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-2"
+  disabled={isPublishing}
+  className="w-full py-4 bg-primary text-white rounded-full font-label-md text-label-md shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
 >
-<span className="material-symbols-outlined" data-weight="fill">send</span>
-                                Publish Project
+<span className="material-symbols-outlined" data-weight="fill">
+  {isPublishing ? 'hourglass_empty' : 'send'}
+</span>
+                                {isPublishing ? 'Publishing...' : 'Publish Project'}
                             </button>
 <button className="w-full py-4 border border-secondary text-secondary rounded-full font-label-md text-label-md hover:bg-secondary/5 transition-all">
                                 Save as Private Draft

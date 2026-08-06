@@ -4,12 +4,57 @@ import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import Logo from '@/components/Logo';
+import { createClient } from '@/utils/supabase/client';
 
 export function Navbar() {
   const pathname = usePathname();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const [session, setSession] = useState<any>(null);
+  const [profile, setProfile] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  const supabase = createClient();
+
+  useEffect(() => {
+    const fetchSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      setSession(session);
+      if (session?.user) {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select(`
+            full_name,
+            avatar_url,
+            profile_roles (
+              roles ( name )
+            )
+          `)
+          .eq('id', session.user.id)
+          .single();
+        if (!error && data) {
+          setProfile(data);
+        }
+      }
+      setIsLoading(false);
+    };
+
+    fetchSession();
+
+    const { data: authListener } = supabase.auth.onAuthStateChange(async (event, currentSession) => {
+      setSession(currentSession);
+      if (!currentSession) {
+        setProfile(null);
+      } else if (!profile) {
+        fetchSession();
+      }
+    });
+
+    return () => {
+      authListener.subscription.unsubscribe();
+    };
+  }, []);
 
   // Close on Escape & click outside
   useEffect(() => {
@@ -33,9 +78,6 @@ export function Navbar() {
     };
   }, [isProfileDropdownOpen]);
 
-  // Mocking professional logged-in state based on user request
-  const isLoggedIn = true;
-
   const toggleMobileMenu = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen);
   };
@@ -43,9 +85,20 @@ export function Navbar() {
   const navLinks = [
     { name: 'Home', path: '/' },
     { name: 'Projects', path: '/projects' },
-    { name: 'Artisans', path: '/artisans' },
     { name: 'Explore', path: '/explore' },
   ];
+
+  const handleLogout = async () => {
+    setIsProfileDropdownOpen(false);
+    await supabase.auth.signOut();
+    // Use the route to clear server cookies as well
+    await fetch('/auth/logout', { method: 'POST' });
+    window.location.href = '/login';
+  };
+
+  const displayName = profile?.full_name || 'Artisan';
+  const displayRole = profile?.profile_roles?.[0]?.roles?.name || 'Textile Professional';
+  const displayAvatar = profile?.avatar_url || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=256';
 
   return (
     <nav className="fixed top-0 left-0 w-full z-50 bg-surface/90 dark:bg-surface-dim/90 backdrop-blur-md shadow-sm border-b border-outline-variant/20">
@@ -91,7 +144,7 @@ export function Navbar() {
         </div>
 
         <div className="flex items-center gap-4">
-          {!isLoggedIn ? (
+          {!isLoading && !session ? (
             <>
               <Link href="/login" className="font-label-md text-label-md font-bold text-on-surface-variant hover:text-primary transition-colors hidden md:block focus:outline-none focus:ring-2 focus:ring-primary rounded-lg px-3 py-2">
                 Log In
@@ -100,7 +153,7 @@ export function Navbar() {
                 Join the Atelier
               </Link>
             </>
-          ) : (
+          ) : !isLoading && session ? (
             <div className="relative" ref={dropdownRef}>
               <button 
                 className="flex items-center gap-2 p-1 rounded-full hover:bg-surface-variant/50 transition-colors focus:outline-none focus:ring-2 focus:ring-primary"
@@ -111,8 +164,8 @@ export function Navbar() {
               >
                 <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-surface-variant shadow-sm">
                   <img 
-                    src="https://lh3.googleusercontent.com/aida-public/AB6AXuANf5msGfpBwraVf80zGPy0n3JBSPQp6MJnVF9YgMG58-etwGk_a54lmk8QfX1EXbv_uilQ--5g1qGqkj96Jq1s1HxQHwrKM6G_8JXsDi61ArduC2YHPX5ze6HdbARr2B9o5apGNiSMVlfuqennc3iCRJIveZmPd62P4gyjNBOTihnjFjw_D11zWSkiNWJOe3Z6RVlGJURqPC2HDH2q0aCLd_2puyyNjN6gV3ToAS27HUt0Pgw4OeZJWV2jaKEJ_mkq1zOIZGRgRo4" 
-                    alt="Lina Benyahia Profile" 
+                    src={displayAvatar} 
+                    alt="Profile" 
                     className="w-full h-full object-cover"
                   />
                 </div>
@@ -130,11 +183,11 @@ export function Navbar() {
                   ></div>
                   <div className="absolute right-0 mt-2 w-64 bg-white dark:bg-surface-container-high rounded-2xl shadow-xl border border-outline-variant/20 z-50 overflow-hidden transform origin-top-right transition-all">
                     <div className="p-4 border-b border-outline-variant/20 bg-surface-container-low/50">
-                      <p className="font-title-lg text-title-lg text-on-surface">Lina Benyahia</p>
-                      <p className="font-label-md text-label-md text-on-surface-variant">Fashion Designer</p>
+                      <p className="font-title-lg text-title-lg text-on-surface">{displayName}</p>
+                      <p className="font-label-md text-label-md text-on-surface-variant truncate">{displayRole}</p>
                     </div>
                     <div className="flex flex-col py-2">
-                      <Link href="/profile" className="flex items-center gap-3 px-4 py-3 text-on-surface hover:bg-surface-variant/50 transition-colors focus:bg-surface-variant/50 focus:outline-none" onClick={() => setIsProfileDropdownOpen(false)}>
+                      <Link href={`/profile/${session.user.id}`} className="flex items-center gap-3 px-4 py-3 text-on-surface hover:bg-surface-variant/50 transition-colors focus:bg-surface-variant/50 focus:outline-none" onClick={() => setIsProfileDropdownOpen(false)}>
                         <span className="material-symbols-outlined text-[20px]">person</span>
                         <span className="font-label-md">My Profile</span>
                       </Link>
@@ -151,11 +204,7 @@ export function Navbar() {
                         <span className="font-label-md">Messages</span>
                       </Link>
                       <div className="h-px bg-outline-variant/20 my-1"></div>
-                      <button className="flex items-center gap-3 px-4 py-3 text-error hover:bg-error-container/20 transition-colors w-full text-left focus:bg-error-container/20 focus:outline-none" onClick={() => {
-                        setIsProfileDropdownOpen(false);
-                        alert("Logged out (preview)");
-                        window.location.href = '/login';
-                      }}>
+                      <button className="flex items-center gap-3 px-4 py-3 text-error hover:bg-error-container/20 transition-colors w-full text-left focus:bg-error-container/20 focus:outline-none" onClick={handleLogout}>
                         <span className="material-symbols-outlined text-[20px]">logout</span>
                         <span className="font-label-md">Log Out</span>
                       </button>
@@ -164,6 +213,8 @@ export function Navbar() {
                 </>
               )}
             </div>
+          ) : (
+            <div className="w-10 h-10 rounded-full bg-surface-variant/30 animate-pulse"></div>
           )}
         </div>
       </div>

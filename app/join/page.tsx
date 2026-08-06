@@ -4,7 +4,33 @@ import React from 'react';
 import Link from 'next/link';
 import Logo from '@/components/Logo';
 
+import { useRouter } from 'next/navigation';
+import { createClient } from '@/utils/supabase/client';
+
 export default function JoinPage() {
+  const router = useRouter();
+
+  const handlePlanClick = async (plan: string, e: React.MouseEvent) => {
+    e.preventDefault();
+    const supabase = createClient();
+    const { data: { session } } = await supabase.auth.getSession();
+    
+    if (!session) {
+      // Save intent and redirect to register
+      localStorage.setItem('tirazy_selected_plan', plan);
+      router.push(`/register?plan=${plan}`);
+      return;
+    }
+    
+    if (plan === 'free') {
+      router.push('/user');
+      return;
+    }
+
+    // Redirect to the internal mock checkout page
+    router.push(`/checkout?plan=${plan}`);
+  };
+
   const benefits = [
     {
       title: 'Build Your Professional Profile',
@@ -94,12 +120,12 @@ export default function JoinPage() {
                 <p className="text-[13px] text-on-surface-variant">Build Your Presence</p>
                 <p className="text-2xl font-bold text-on-surface pt-2">0 DA <span className="text-xs text-on-surface-variant font-normal">/ month</span></p>
               </div>
-              <Link
-                href="/register?plan=free"
+              <button
+                onClick={(e) => handlePlanClick('free', e)}
                 className="w-full bg-surface-container-high text-on-surface font-label-md text-label-md py-3 rounded-full hover:bg-surface-container-highest active:scale-95 transition-all text-center border border-outline-variant/50"
               >
                 Choose Free
-              </Link>
+              </button>
             </div>
 
             {/* Premium Basic Plan */}
@@ -108,14 +134,14 @@ export default function JoinPage() {
                 <h3 className="font-title-lg text-lg text-primary font-bold">Premium Basic</h3>
                 <p className="text-[13px] text-on-surface-variant">Get Discovered</p>
                 <p className="text-2xl font-bold text-on-surface pt-2">2,000 DA <span className="text-xs text-on-surface-variant font-normal">/ month</span></p>
-                <p className="text-[10px] text-secondary italic mt-2 leading-tight">Premium plan selection is reserved for your account. Payment activation will be available soon.</p>
+                <p className="text-[10px] text-secondary italic mt-2 leading-tight">Secure credit card payment via Stripe Checkout.</p>
               </div>
-              <Link
-                href="/register?plan=premium-basic"
+              <button
+                onClick={(e) => handlePlanClick('premium-basic', e)}
                 className="w-full bg-primary/10 text-primary border border-primary/20 font-label-md text-label-md py-3 rounded-full hover:bg-primary hover:text-white active:scale-95 transition-all text-center"
               >
                 Choose Basic
-              </Link>
+              </button>
             </div>
 
             {/* Premium Pro Plan */}
@@ -127,14 +153,14 @@ export default function JoinPage() {
                 <h3 className="font-title-lg text-lg text-primary font-bold">Premium Pro</h3>
                 <p className="text-[13px] text-on-surface-variant">Lead With Credibility</p>
                 <p className="text-2xl font-bold text-on-surface pt-2">4,500 DA <span className="text-xs text-on-surface-variant font-normal">/ month</span></p>
-                <p className="text-[10px] text-secondary italic mt-2 leading-tight">Premium plan selection is reserved for your account. Payment activation will be available soon.</p>
+                <p className="text-[10px] text-secondary italic mt-2 leading-tight">Secure credit card payment via Stripe Checkout.</p>
               </div>
-              <Link
-                href="/register?plan=premium-pro"
+              <button
+                onClick={(e) => handlePlanClick('premium-pro', e)}
                 className="w-full bg-primary text-white font-label-md text-label-md py-3 rounded-full shadow-lg hover:bg-primary-dark active:scale-95 transition-all text-center"
               >
                 Choose Pro
-              </Link>
+              </button>
             </div>
           </div>
 

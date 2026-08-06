@@ -1,5 +1,6 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { OnboardingData } from './types';
 
 interface SuccessStepProps {
@@ -7,6 +8,9 @@ interface SuccessStepProps {
 }
 
 export function SuccessStep({ data }: SuccessStepProps) {
+  const router = useRouter();
+  const [isProcessing, setIsProcessing] = useState(false);
+
   useEffect(() => {
     // Save the completed onboarding details in localStorage for preview purposes
     localStorage.setItem('tirazy_onboarding', JSON.stringify({
@@ -18,6 +22,19 @@ export function SuccessStep({ data }: SuccessStepProps) {
     // Save selected plan
     localStorage.setItem('tirazy_selected_plan', data.selectedPlan || 'free');
   }, [data]);
+
+  const handleCheckout = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    
+    if (!data.selectedPlan || data.selectedPlan === 'free') {
+      router.push('/user');
+      return;
+    }
+    
+    setIsProcessing(true);
+    // Redirect to internal mock checkout page
+    router.push(`/checkout?plan=${data.selectedPlan}`);
+  };
 
   return (
     <div className="text-center space-y-8 animate-in fade-in zoom-in-95 duration-500 max-w-md mx-auto">
@@ -84,15 +101,18 @@ export function SuccessStep({ data }: SuccessStepProps) {
 
       {/* Primary Action */}
       <div className="space-y-4 pt-2">
-        <Link
-          href="/user"
-          className="w-full bg-primary text-white font-label-md text-label-md py-4 rounded-full shadow-lg shadow-primary/20 hover:bg-primary-dark hover:scale-[1.02] active:scale-95 transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer"
+        <button
+          onClick={handleCheckout}
+          disabled={isProcessing}
+          className="w-full bg-primary text-white font-label-md text-label-md py-4 rounded-full shadow-lg shadow-primary/20 hover:bg-primary-dark hover:scale-[1.02] active:scale-95 transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          Enter the Platform
-          <span className="material-symbols-outlined text-[18px]">workspace_premium</span>
-        </Link>
+          {isProcessing ? 'Redirecting...' : (data.selectedPlan !== 'free' ? 'Continue to Payment' : 'Enter the Platform')}
+          {!isProcessing && <span className="material-symbols-outlined text-[18px]">
+            {data.selectedPlan !== 'free' ? 'payment' : 'workspace_premium'}
+          </span>}
+        </button>
         <p className="text-[11px] text-on-surface-variant/50">
-          This redirects you to the User Preview dashboard.
+          {data.selectedPlan !== 'free' ? 'You will be redirected securely to Stripe.' : 'This redirects you to the User dashboard.'}
         </p>
       </div>
 

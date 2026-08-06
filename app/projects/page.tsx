@@ -3,6 +3,8 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 
+import { createClient } from '@/utils/supabase/client';
+
 export interface Project {
   id: string;
   title: string;
@@ -14,7 +16,7 @@ export interface Project {
   artisanWilaya: string;
   text: string;
   image: string;
-  status: 'Urgent' | 'Ongoing' | 'New' | 'Normal';
+  status: string;
   applicants: number;
 }
 
@@ -23,7 +25,7 @@ export default function ProjectsPage() {
   const [wilayaSearch, setWilayaSearch] = useState<string>('');
   const [projectsList, setProjectsList] = useState<Project[]>([]);
 
-  const categories = ['All', 'Embroidery', 'Pattern Making', 'Silk Weaving', 'Sustainable Dyeing', 'Leather Work'];
+  const categories = ['All', 'Embroidery', 'Pattern Making', 'Silk Weaving', 'Sustainable Dyeing', 'Leather Work', 'Haute Couture', 'Traditional Karakou'];
 
   // Local Mock Projects Data matching static cards
   const initialProjects: Project[] = [
@@ -114,18 +116,43 @@ export default function ProjectsPage() {
   ];
 
   useEffect(() => {
-    const storedProjects = localStorage.getItem('tirazy_projects');
-    if (storedProjects) {
-      try {
-        const parsed = JSON.parse(storedProjects);
-        setProjectsList(parsed.length > 0 ? parsed : initialProjects);
-      } catch (e) {
+    const fetchProjects = async () => {
+      const supabase = createClient();
+      const { data, error } = await supabase
+        .from('projects')
+        .select(`
+          id,
+          title,
+          description,
+          status,
+          wilaya,
+          categories ( name ),
+          profiles ( full_name, avatar_url, wilaya ),
+          project_media ( media_url )
+        `)
+        .order('created_at', { ascending: false });
+
+      if (data && data.length > 0) {
+        const formatted = data.map((p: any) => ({
+          id: p.id,
+          title: p.title,
+          category: p.categories?.name || 'Project',
+          location: p.profiles?.wilaya || p.wilaya || 'Algeria',
+          wilaya: p.wilaya || p.profiles?.wilaya || 'Algeria',
+          artisanName: p.profiles?.full_name || 'Artisan',
+          artisanAvatar: p.profiles?.avatar_url || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=256',
+          artisanWilaya: p.profiles?.wilaya || 'Algeria',
+          text: p.description,
+          image: p.project_media?.[0]?.media_url || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=256',
+          status: p.status === 'approved' ? 'New' : p.status, // mapping status
+          applicants: 0
+        }));
+        setProjectsList([...formatted, ...initialProjects]);
+      } else {
         setProjectsList(initialProjects);
       }
-    } else {
-      setProjectsList(initialProjects);
-      localStorage.setItem('tirazy_projects', JSON.stringify(initialProjects));
-    }
+    };
+    fetchProjects();
   }, []);
 
   // Combined Category + Wilaya filter
